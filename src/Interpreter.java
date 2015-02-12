@@ -1,5 +1,3 @@
-
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,17 +11,20 @@ public class Interpreter {
     private ThreadLocal<Process> current = new ThreadLocal<>();
 
     public Interpreter() {
-        SExpression sum = new SExpression(new Symbol("apply"), new Function<List<Integer>, Object>() {
+        register("+", new Function<List<Object>, Object>() {
 
             @Override
-            public Object apply(List<Integer> t) {
-                return t.stream().reduce(0, Integer::sum);
+            public Object apply(List<Object> t) {
+                return (Integer) t.get(0) + (Integer) t.get(1);
             }
         });
-
-        symbolTable.put("+", new SExpression("+", new SExpression("a", "b"), sum));
         Process p = new Process();
         current.set(p);
+    }
+  
+    public void register(String name, Function<List<Object>, Object> f) {
+        SExpression sum = new SExpression(new Symbol("apply"), f);
+        symbolTable.put(name, new SExpression(name, new SExpression("a", "b"), sum));
     }
 
     public void evalSExpression(SExpression expression) {
@@ -55,10 +56,10 @@ public class Interpreter {
     private Object eval(SExpression obj) {
         switch (((Symbol) obj.list.getFirst()).name) {
         case "apply":
-            return ((Function) obj.list.get(1)).compose(new Function<Map<String, Object>, List<Integer>>() {
+            return ((Function) obj.list.get(1)).compose(new Function<Map<String, Object>, List<Object>>() {
 
                 @Override
-                public List<Integer> apply(Map<String, Object> t) {
+                public List<Object> apply(Map<String, Object> t) {
                     return t.values().stream().map(v -> (Integer) v).collect(Collectors.toList());
                 }
             }).apply(current.get().stack.getFirst().variables);
@@ -67,6 +68,7 @@ public class Interpreter {
             String name = (String) obj.list.get(1);
             Object value = current.get().value;
             f.variables.put(name, value);
+            return value;
         default:
             evalSExpression(obj);
         }

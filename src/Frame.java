@@ -14,7 +14,6 @@ public class Frame {
     Iterator<Object> current;
     boolean isCode;
     Map<String, Object> variables = new HashMap<>();
-    Object rtValue;
 
     public Frame(SExpression expr, List<Object> args) {
 
