@@ -13,7 +13,10 @@ public class Parser {
   /** Main entry point. */
   public static void main(String args[]) throws ParseException {
     Parser parser = new Parser(System.in);
-    parser.parse();
+    List<SExpression> list = parser.parse();
+    for (SExpression sexp : list) {
+      System.out.println(sexp.list);
+    }
   }
 
 }

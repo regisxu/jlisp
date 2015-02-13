@@ -78,16 +78,20 @@ public class Interpreter {
     }
 
     public void run() {
-        Parser parser = new Parser(new StringReader("(+ (+ 2 3) (+ 5 (+ 2 2)))\n"));
+        Parser parser = new Parser(System.in);
+        List<SExpression> sexps = null;
         try {
-            SExpression expr = parser.parse().get(0);
-            current.get().value = eval(expr);
-            while ((expr = next()) != null) {
-                Object value = eval(expr);
-                current.get().value = value;
-            }
+            sexps = parser.parse();
         } catch (ParseException e) {
             throw new RuntimeException(e);
+        }
+
+        for (SExpression sexp : sexps) {
+            current.get().value = eval(sexp);
+            while ((sexp = next()) != null) {
+                Object value = eval(sexp);
+                current.get().value = value;
+            }
         }
     }
 
