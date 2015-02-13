@@ -3,6 +3,11 @@ PARSER_BEGIN(Parser)
 
 package org.regis.jlisp;
 
+import java.util.List;
+import java.util.LinkedList;
+import org.regis.jlisp.Symbol;
+import org.regis.jlisp.SExpression;
+
 public class Parser {
 
   /** Main entry point. */
@@ -24,26 +29,46 @@ TOKEN :
 }
 
 /** Root production. */
-void Input() :
+
+List<SExpression> Input() :
 {}
 {
-  (list() ("\n"|"\r")*)+ <EOF>
+  { List<SExpression> sexps = new LinkedList();
+    SExpression sexp = null;
+  }
+  (sexp = sexp() ("\n"|"\r")+ { sexps.add(sexp); } )+ <EOF>
+  { return sexps; }
 }
 
-void element() :
+Object element() :
 {}
 {
-  <BOOL> | <INTEGER> | <SYMBOL> | <STRING> | list()
+  { Object obj = null; }
+( <BOOL> { obj = Boolean.valueOf(token.image); }
+| <INTEGER> { obj = Integer.valueOf(token.image); }
+| <SYMBOL> { obj = new Symbol(token.image); }
+| <STRING> { obj = token.image; }
+| { obj = sexp(); }
+)
+  { return obj; }
 }
 
-void elements() :
+List elements() :
 {}
 {
-  element() (" " element())*
+  { List list = new LinkedList(); }
+  { list.add(element()); } (" " { list.add(element()); } )*
+  { return list; }
 }
 
-void list() :
+SExpression sexp() :
 {}
 {
-  "(" elements() ")"
+  { List list = null; }
+  "(" { list = elements(); } ")"
+  {
+    SExpression sexp = new SExpression();
+    sexp.list = (LinkedList) list;
+    return sexp;
+  }
 }
