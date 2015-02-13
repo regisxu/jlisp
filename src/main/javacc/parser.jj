@@ -1,0 +1,49 @@
+
+PARSER_BEGIN(Parser)
+
+package org.regis.jlisp;
+
+public class Parser {
+
+  /** Main entry point. */
+  public static void main(String args[]) throws ParseException {
+    Parser parser = new Parser(System.in);
+    parser.Input();
+  }
+
+}
+
+PARSER_END(Parser)
+
+TOKEN :
+{
+  < BOOL: "true" | "false" >
+| < INTEGER: ("-")? ["1"-"9"] (["0"-"9"])* >
+| < STRING: "\"" (~["\""])* "\"" >
+| < SYMBOL: (["a"-"z"] | ["A"-"Z"])+ >
+}
+
+/** Root production. */
+void Input() :
+{}
+{
+  (list() ("\n"|"\r")*)+ <EOF>
+}
+
+void element() :
+{}
+{
+  <BOOL> | <INTEGER> | <SYMBOL> | <STRING> | list()
+}
+
+void elements() :
+{}
+{
+  element() (" " element())*
+}
+
+void list() :
+{}
+{
+  "(" elements() ")"
+}
