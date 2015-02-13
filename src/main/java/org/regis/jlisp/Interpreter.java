@@ -1,4 +1,5 @@
 package org.regis.jlisp;
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,12 +78,16 @@ public class Interpreter {
     }
 
     public void run() {
-        ParserOld parser = new ParserOld();
-        SExpression expr = parser.parse("(+ (+ 2 3) (+ 5 (+ 2 2)))").getFirst();
-        current.get().value = eval(expr);
-        while ((expr = next()) != null) {
-            Object value = eval(expr);
-            current.get().value = value;
+        Parser parser = new Parser(new StringReader("(+ (+ 2 3) (+ 5 (+ 2 2)))\n"));
+        try {
+            SExpression expr = parser.parse().get(0);
+            current.get().value = eval(expr);
+            while ((expr = next()) != null) {
+                Object value = eval(expr);
+                current.get().value = value;
+            }
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
         }
     }
 

@@ -13,7 +13,7 @@ public class Parser {
   /** Main entry point. */
   public static void main(String args[]) throws ParseException {
     Parser parser = new Parser(System.in);
-    parser.Input();
+    parser.parse();
   }
 
 }
@@ -25,12 +25,12 @@ TOKEN :
   < BOOL: "true" | "false" >
 | < INTEGER: ("-")? ["1"-"9"] (["0"-"9"])* >
 | < STRING: "\"" (~["\""])* "\"" >
-| < SYMBOL: (["a"-"z"] | ["A"-"Z"])+ >
+| < SYMBOL: (["a"-"z"] | ["A"-"Z"] | ["+"])+ >
 }
 
 /** Root production. */
 
-List<SExpression> Input() :
+List<SExpression> parse() :
 {}
 {
   { List<SExpression> sexps = new LinkedList();
