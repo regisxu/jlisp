@@ -3,7 +3,7 @@ package org.regis.jlisp;
 import java.util.LinkedList;
 import java.util.List;
 
-public class Parser {
+public class ParserOld {
 
     public LinkedList<SExpression> parse(String code) {
         LinkedList<SExpression> list = new LinkedList<>();
@@ -51,7 +51,7 @@ public class Parser {
     }
 
     public static void main(String[] args) {
-        Parser p = new Parser();
+        ParserOld p = new ParserOld();
         List<SExpression> list = p.parse("(+ 1 \"1\")");
         System.out.println();
     }

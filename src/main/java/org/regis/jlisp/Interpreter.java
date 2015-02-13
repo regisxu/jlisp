@@ -77,7 +77,7 @@ public class Interpreter {
     }
 
     public void run() {
-        Parser parser = new Parser();
+        ParserOld parser = new ParserOld();
         SExpression expr = parser.parse("(+ (+ 2 3) (+ 5 (+ 2 2)))").getFirst();
         current.get().value = eval(expr);
         while ((expr = next()) != null) {
