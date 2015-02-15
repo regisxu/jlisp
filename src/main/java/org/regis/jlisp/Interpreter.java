@@ -68,13 +68,9 @@ public class Interpreter {
     private Object eval(SExpression obj) {
         switch (((Symbol) obj.list.getFirst()).name) {
         case "apply":
-            return ((Function) obj.list.get(1)).compose(new Function<List<Variable>, List<Object>>() {
-
-                @Override
-                public List<Object> apply(List<Variable> t) {
-                    return t.stream().map(v -> v.value).collect(Collectors.toList());
-                }
-            }).apply(current.get().stack.getFirst().variables);
+            return ((Function<List<Object>, Object>) obj.list.get(1)).<List<Variable>> compose(
+                    t -> t.stream().map(v -> v.value).collect(Collectors.toList())).apply(
+                    current.get().stack.getFirst().variables);
         case "bind":
             Frame f = current.get().stack.getFirst();
             String name = (String) obj.list.get(1);

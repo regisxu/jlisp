@@ -1,11 +1,9 @@
 package org.regis.jlisp;
 
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Frame {
@@ -14,7 +12,7 @@ public class Frame {
     Iterator<Object> code;
     Iterator<Object> current;
     boolean isCode;
-    List<Variable> variables = new LinkedList<Variable>();
+    List<Variable> variables = new LinkedList<>();
 
     public Frame(SExpression expr, List<Object> args) {
 
