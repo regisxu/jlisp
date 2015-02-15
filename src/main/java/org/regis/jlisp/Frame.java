@@ -14,7 +14,7 @@ public class Frame {
     Iterator<Object> code;
     Iterator<Object> current;
     boolean isCode;
-    Map<String, Object> variables = new HashMap<>();
+    List<Variable> variables = new LinkedList<Variable>();
 
     public Frame(SExpression expr, List<Object> args) {
 
@@ -23,19 +23,31 @@ public class Frame {
         List<String> argNames = ((SExpression) code.next()).list.stream().map(entry -> {
             return (String) entry;
         }).collect(Collectors.toList());
-        Iterator<Object> it = args.iterator();
-        for (String argName : argNames) {
-            Object arg = it.next();
-            if (arg instanceof SExpression) {
-                SExpression s = (SExpression) arg;
-                local.add(s);
-                SExpression bind = new SExpression(new Symbol("bind"), argName);
-                local.add(bind);
-            } else {
-                variables.put(argName, arg);
+        if (argNames.size() == 1 && argNames.get(0).equals("...")) {
+            for (int i = 0; i < args.size(); ++i) {
+                if (args.get(i) instanceof SExpression) {
+                    SExpression s = (SExpression) args.get(i);
+                    local.add(s);
+                    SExpression bind = new SExpression(new Symbol("bind"), "arg" + i);
+                    local.add(bind);
+                } else {
+                    variables.add(new Variable("arg" + i, args.get(i)));
+                }
+            }
+        } else {
+            Iterator<Object> it = args.iterator();
+            for (String argName : argNames) {
+                Object arg = it.next();
+                if (arg instanceof SExpression) {
+                    SExpression s = (SExpression) arg;
+                    local.add(s);
+                    SExpression bind = new SExpression(new Symbol("bind"), argName);
+                    local.add(bind);
+                } else {
+                    variables.add(new Variable(argName, arg));
+                }
             }
         }
-
         current = local.iterator();
         isCode = false;
     }

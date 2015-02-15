@@ -1,7 +1,7 @@
 package org.regis.jlisp;
+
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -12,20 +12,27 @@ public class Interpreter {
     private ThreadLocal<Process> current = new ThreadLocal<>();
 
     public Interpreter() {
-        register("+", new Function<List<Object>, Object>() {
-
-            @Override
-            public Object apply(List<Object> t) {
-                return (Integer) t.get(0) + (Integer) t.get(1);
-            }
+        register("+", args -> (Integer) args.get(0) + (Integer) args.get(1));
+        register("-", args -> (Integer) args.get(0) - (Integer) args.get(1));
+        register("*", args -> (Integer) args.get(0) * (Integer) args.get(1));
+        register("/", args -> (Integer) args.get(0) / (Integer) args.get(1));
+        register("println", args -> {
+            System.out.println(args.get(0));
+            return null;
         });
         Process p = new Process();
         current.set(p);
     }
-  
+
+    public SExpression defun(SExpression sexp) {
+        SExpression fun = new SExpression(sexp.list.removeFirst());
+        symbolTable.put((String) fun.list.getFirst(), fun);
+        return fun;
+    }
+
     public void register(String name, Function<List<Object>, Object> f) {
-        SExpression sum = new SExpression(new Symbol("apply"), f);
-        symbolTable.put(name, new SExpression(name, new SExpression("a", "b"), sum));
+        SExpression sfun = new SExpression(new Symbol("apply"), f);
+        symbolTable.put(name, new SExpression(name, new SExpression("..."), sfun));
     }
 
     public void evalSExpression(SExpression expression) {
@@ -46,7 +53,11 @@ public class Interpreter {
     private Object findValue(String name) {
         Object v = null;
         if (current.get().stack.size() > 0) {
-            v = current.get().stack.getFirst().variables.get(name);
+            for (Variable var : current.get().stack.getFirst().variables) {
+                if (var.name.equals(name)) {
+                    v = var.value;
+                }
+            }
         }
         if (v == null) {
             v = symbolTable.get(name);
@@ -57,18 +68,18 @@ public class Interpreter {
     private Object eval(SExpression obj) {
         switch (((Symbol) obj.list.getFirst()).name) {
         case "apply":
-            return ((Function) obj.list.get(1)).compose(new Function<Map<String, Object>, List<Object>>() {
+            return ((Function) obj.list.get(1)).compose(new Function<List<Variable>, List<Object>>() {
 
                 @Override
-                public List<Object> apply(Map<String, Object> t) {
-                    return t.values().stream().map(v -> (Integer) v).collect(Collectors.toList());
+                public List<Object> apply(List<Variable> t) {
+                    return t.stream().map(v -> v.value).collect(Collectors.toList());
                 }
             }).apply(current.get().stack.getFirst().variables);
         case "bind":
             Frame f = current.get().stack.getFirst();
             String name = (String) obj.list.get(1);
             Object value = current.get().value;
-            f.variables.put(name, value);
+            f.variables.add(new Variable(name, value));
             return value;
         default:
             evalSExpression(obj);
