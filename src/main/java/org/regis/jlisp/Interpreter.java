@@ -1,6 +1,7 @@
 package org.regis.jlisp;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -11,6 +12,10 @@ public class Interpreter {
 
     private ThreadLocal<Process> current = new ThreadLocal<>();
 
+    private LinkedList<Object> codeStack = new LinkedList<>();
+
+    private LinkedList<Object> varStack = new LinkedList<>();
+
     public Interpreter() {
         register("+", args -> (Integer) args.get(0) + (Integer) args.get(1));
         register("-", args -> (Integer) args.get(0) - (Integer) args.get(1));
@@ -20,7 +25,7 @@ public class Interpreter {
             System.out.println(args.get(0));
             return null;
         });
-        Process p = new Process();
+        Process p = new Process(symbolTable);
         current.set(p);
     }
 
@@ -103,6 +108,38 @@ public class Interpreter {
 
     private SExpression next() {
         return current.get().next();
+    }
+
+    private void traverse(SExpression sexp) {
+        codeStack.addFirst(sexp);
+        Object o = null;
+        while ((o = codeStack.getFirst()) != null) {
+            if (o instanceof SExpression) {
+                SExpression exp = (SExpression) o;
+                codeStack.addFirst(new Call((Symbol) exp.list.getFirst(), exp.list.size() - 1));
+                for (Object obj : sexp.list.subList(1, exp.list.size())) {
+                    codeStack.addFirst(obj);
+                }
+            } else if (o instanceof Call) {
+                Call call = (Call) o;
+                invoke(call);
+            } else {
+                varStack.addFirst(o);
+            }
+        }
+    }
+
+
+    private void invoke(Call call) {
+        Object fun = resolveName(call.name.name);
+        if (fun instanceof Function) {
+            Function f = (Function) fun;
+            List<Object> paras = new LinkedList<>();
+            for (int i = 0; i < call.count; i++) {
+                paras.add(varStack.getFirst());
+            }
+            varStack.addFirst(f.apply(paras));
+        }
     }
 
     public static void main(String[] args) {
