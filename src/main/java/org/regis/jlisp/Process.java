@@ -1,7 +1,6 @@
 package org.regis.jlisp;
 
 import java.io.ByteArrayInputStream;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,19 +32,6 @@ public class Process {
 
     public Process(HashMap<String, Object> symbolTable) {
         this.symbolTable = symbolTable;
-    }
-
-    public SExpression next() {
-        while (stack.size() > 0) {
-            Frame f = stack.getFirst();
-            SExpression expr = f.next();
-            if (expr == null) {
-                stack.removeFirst();
-            } else {
-                return expr;
-            }
-        }
-        return null;
     }
 
     public Object run() {
@@ -108,6 +94,9 @@ public class Process {
             Symbol s = (Symbol) v;
             v = findValue(s.name);
         }
+        if (v == null) {
+            throw new RuntimeException("Can't resolve symbol '" + name + "'");
+        }
         return v;
     }
 
@@ -127,9 +116,8 @@ public class Process {
     }
 
     public static void main(String[] args) {
-        Parser parser = new Parser(new ByteArrayInputStream(
-                ("(defun add (a b) (+ a b))\n"
-                + "(add (add 2 3) 4)\n").getBytes()));
+        Parser parser = new Parser(new ByteArrayInputStream(("(defun add (a b c) (+ a (+ c b)))\n" + "(add (add 2 3 4) 5 6)\n"
+                + "").getBytes()));
         List<SExpression> sexps = null;
         try {
             sexps = parser.parse();
@@ -139,12 +127,6 @@ public class Process {
         Process p = new Process();
         LinkedList<Object> code = new LinkedList<Object>();
         code.addAll(sexps);
-//        code.addFirst(new SExpression());
-//        code.addFirst(new Symbol("main"));
-//        SExpression main = new SExpression();
-//        main.list = code;
-//        Frame f = new Frame(main, Collections.emptyList());
-//        p.stack.add(f);
         p.codeStack = code;
         System.out.println(p.run());
     }
