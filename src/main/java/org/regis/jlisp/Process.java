@@ -23,7 +23,7 @@ public class Process {
         register("/", args -> (Integer) args.get(0) / (Integer) args.get(1));
         register("println", args -> {
             System.out.println(args.get(0));
-            return null;
+            return args.get(0);
         });
     }
 
@@ -114,7 +114,9 @@ public class Process {
     }
 
     public static void main(String[] args) {
-        Parser parser = new Parser(new ByteArrayInputStream("(println \"test\")\n".getBytes()));
+        Parser parser = new Parser(new ByteArrayInputStream(
+                ("(println (println \"test\"))\n"
+                + "(* 2 3)\n").getBytes()));
         List<SExpression> sexps = null;
         try {
             sexps = parser.parse();
