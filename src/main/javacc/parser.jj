@@ -53,7 +53,7 @@ Object element() :
 ( <BOOL> { obj = Boolean.valueOf(token.image); }
 | <INTEGER> { obj = Integer.valueOf(token.image); }
 | <SYMBOL> { obj = new Symbol(token.image); }
-| <STRING> { obj = token.image; }
+| <STRING> { obj = token.image.substring(1, token.image.length() - 1); }
 | { obj = sexp(); }
 )
   { return obj; }
