@@ -17,9 +17,9 @@ public class Frame {
     public Frame(SExpression expr, List<Object> args) {
 
         code = expr.list.iterator();
-        name = (String) code.next();
+        name = ((Symbol) code.next()).name;
         List<String> argNames = ((SExpression) code.next()).list.stream().map(entry -> {
-            return (String) entry;
+            return ((Symbol) entry).name;
         }).collect(Collectors.toList());
         if (argNames.size() == 1 && argNames.get(0).equals("...")) {
             for (int i = 0; i < args.size(); ++i) {

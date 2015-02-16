@@ -12,4 +12,8 @@ public class SExpression {
     }
 
     LinkedList<Object> list;
+    
+    public String toString() {
+        return list == null ? null : list.toString();
+    }
 }
