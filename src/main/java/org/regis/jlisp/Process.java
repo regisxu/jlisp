@@ -1,19 +1,18 @@
 package org.regis.jlisp;
 
 import java.io.ByteArrayInputStream;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class Process {
 
-    LinkedList<Frame> stack = new LinkedList<>();
-    Object value;
+    private Object value;
     private LinkedList<Object> codeStack = new LinkedList<>();
     private LinkedList<Object> varStack = new LinkedList<>();
 
-    private HashMap<String, Object> symbolTable = new HashMap<>();
+    private Context context = new Context();
 
     public Process() {
         register("+", args -> (Integer) args.get(0) + (Integer) args.get(1));
@@ -24,14 +23,14 @@ public class Process {
             System.out.println(args.get(0));
             return args.get(0);
         });
+        register("#pop", args -> {
+            context.popFrame();
+            return varStack.pollFirst();
+        });
     }
 
     public void register(String name, Function<List<Object>, Object> f) {
-        symbolTable.put(name, f);
-    }
-
-    public Process(HashMap<String, Object> symbolTable) {
-        this.symbolTable = symbolTable;
+        context.addGlobal(name, f);
     }
 
     public Object run() {
@@ -47,7 +46,8 @@ public class Process {
                 if (((Symbol) exp.list.getFirst()).name.equals("defun")) {
                     SExpression f = new SExpression();
                     f.list = new LinkedList<Object>(exp.list.subList(1, exp.list.size()));
-                    symbolTable.put(((Symbol) exp.list.get(1)).name, f);
+                    f.list.add(new SExpression(new Symbol("#pop")));
+                    context.addLocal(((Symbol) exp.list.get(1)).name, f);
                 } else {
                     codeStack.addFirst(new Call((Symbol) exp.list.getFirst(), exp.list.size() - 1));
                     for (Object obj : exp.list.subList(1, exp.list.size())) {
@@ -74,8 +74,10 @@ public class Process {
             value = f.apply(paras);
             varStack.addFirst(value);
         } else {
-            Frame f = new Frame((SExpression) fun, paras);
-            stack.addFirst(f);
+            List<String> names = ((SExpression) ((SExpression) fun).list.get(1)).list.stream().map(entry -> {
+                return ((Symbol) entry).name;
+            }).collect(Collectors.toList());
+            context.pushFrame(names, paras);
             codeStack.addAll(0, ((SExpression) fun).list.subList(2, ((SExpression) fun).list.size()));
         }
     }
@@ -89,35 +91,12 @@ public class Process {
     }
 
     private Object resolveName(String name) {
-        Object v = findValue(name);
-        while (v instanceof Symbol) {
-            Symbol s = (Symbol) v;
-            v = findValue(s.name);
-        }
-        if (v == null) {
-            throw new RuntimeException("Can't resolve symbol '" + name + "'");
-        }
-        return v;
-    }
-
-    private Object findValue(String name) {
-        Object v = null;
-        if (stack.size() > 0) {
-            for (Variable var : stack.getFirst().variables) {
-                if (var.name.equals(name)) {
-                    v = var.value;
-                }
-            }
-        }
-        if (v == null) {
-            v = symbolTable.get(name);
-        }
-        return v;
+        return context.value(name);
     }
 
     public static void main(String[] args) {
-        Parser parser = new Parser(new ByteArrayInputStream(("(defun add (a b c) (+ a (+ c b)))\n" + "(add (add 2 3 4) 5 6)\n"
-                + "").getBytes()));
+        Parser parser = new Parser(new ByteArrayInputStream(("(defun add (a b c) (+ a (+ c b)))\n"
+                + "(add (add 2 3 4) 5 6)\n" + "").getBytes()));
         List<SExpression> sexps = null;
         try {
             sexps = parser.parse();
@@ -129,5 +108,6 @@ public class Process {
         code.addAll(sexps);
         p.codeStack = code;
         System.out.println(p.run());
+        System.out.println();
     }
 }
