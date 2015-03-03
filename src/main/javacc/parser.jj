@@ -39,10 +39,19 @@ TOKEN :
 List<SExpression> parse() :
 {}
 {
+  { List<SExpression> sexps = new LinkedList(); }
+  sexps = sexps() ("\n"|"\r")* <EOF>
+  { return sexps; }
+}
+
+List<SExpression> sexps() :
+{}
+{
   { List<SExpression> sexps = new LinkedList();
     SExpression sexp = null;
+    SExpression next = null;
   }
-  (sexp = sexp() ("\n"|"\r")+ { sexps.add(sexp); } )+ <EOF>
+  sexp = sexp() { sexps.add(sexp); } (("\n"|"\r")+ (next = sexp() { sexps.add(next); } | <EOF>) )*
   { return sexps; }
 }
 
