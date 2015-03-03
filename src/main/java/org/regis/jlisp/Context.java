@@ -4,10 +4,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class Context {
 
-    private HashMap<String, Object> global = new HashMap<>();
+    Map<String, Object> global = new HashMap<>();
 
     private LinkedList<HashMap<String, Object>> frames = new LinkedList<>();
 

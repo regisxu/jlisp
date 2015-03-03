@@ -1,8 +1,10 @@
 package org.regis.jlisp;
 
 import java.io.ByteArrayInputStream;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -14,7 +16,12 @@ public class Process {
 
     private Context context = new Context();
 
-    public Process() {
+    private static Map<String, Object> global = new HashMap<String, Object>();
+    static {
+        init();
+    }
+
+    private static void init() {
         register("+", args -> (Integer) args.get(0) + (Integer) args.get(1));
         register("-", args -> (Integer) args.get(0) - (Integer) args.get(1));
         register("*", args -> (Integer) args.get(0) * (Integer) args.get(1));
@@ -23,14 +30,23 @@ public class Process {
             System.out.println(args.get(0));
             return args.get(0);
         });
+    }
+
+    public Process(List<SExpression> sexps) {
+        context.global = global;
         register("#pop", args -> {
             context.popFrame();
             return varStack.pollFirst();
         });
+        codeStack.addAll(sexps);
     }
 
-    public void register(String name, Function<List<Object>, Object> f) {
-        context.addGlobal(name, f);
+    public Process() {
+
+    }
+
+    public static void register(String name, Function<List<Object>, Object> f) {
+        global.put(name, f);
     }
 
     public Object run() {
