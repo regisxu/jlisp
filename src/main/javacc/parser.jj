@@ -40,7 +40,7 @@ List<SExpression> parse() :
 {}
 {
   { List<SExpression> sexps = new LinkedList(); }
-  sexps = sexps() ("\n"|"\r")* <EOF>
+  ("\n"|"\r")* sexps = sexps() ("\n"|"\r")* <EOF>
   { return sexps; }
 }
 
