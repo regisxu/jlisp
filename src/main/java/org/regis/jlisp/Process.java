@@ -1,6 +1,5 @@
 package org.regis.jlisp;
 
-import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,10 +38,6 @@ public class Process {
             return varStack.pollFirst();
         });
         codeStack.addAll(sexps);
-    }
-
-    public Process() {
-
     }
 
     public static void register(String name, Function<List<Object>, Object> f) {
@@ -108,22 +103,5 @@ public class Process {
 
     private Object resolveName(String name) {
         return context.value(name);
-    }
-
-    public static void main(String[] args) {
-        Parser parser = new Parser(new ByteArrayInputStream(("(defun add (a b c) (+ a (+ c b)))\n"
-                + "(add (add 2 3 4) 5 6)\n" + "").getBytes()));
-        List<SExpression> sexps = null;
-        try {
-            sexps = parser.parse();
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
-        Process p = new Process();
-        LinkedList<Object> code = new LinkedList<Object>();
-        code.addAll(sexps);
-        p.codeStack = code;
-        System.out.println(p.run());
-        System.out.println();
     }
 }
