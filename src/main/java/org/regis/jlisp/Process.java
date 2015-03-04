@@ -1,5 +1,6 @@
 package org.regis.jlisp;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,6 +30,30 @@ public class Process {
             System.out.println(args.get(0));
             return args.get(0);
         });
+        register(
+                "jfun",
+                args -> {
+                    String signature = (String) args.get(0);
+                    try {
+                        Method m = resolveMethod(signature, args.subList(1, args.size()));
+                        return m.invoke(null, args.subList(1, args.size()).toArray());
+                    } catch (Throwable e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+    }
+
+    private static Method resolveMethod(String signature, List<Object> args) throws ClassNotFoundException {
+        String name = signature.substring(signature.lastIndexOf(".") + 1, signature.length());
+        String clsName = signature.substring(signature.indexOf(":") + 1, signature.lastIndexOf("."));
+        Class cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
+        Method[] mds = cls.getDeclaredMethods();
+        for (Method method : mds) {
+            if (method.getName().equals(name) && method.getParameterTypes().length == args.size()) {
+                return method;
+            }
+        }
+        return null;
     }
 
     public Process(List<SExpression> sexps) {
