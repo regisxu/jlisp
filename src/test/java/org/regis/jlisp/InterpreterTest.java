@@ -25,5 +25,9 @@ public class InterpreterTest {
                 Interpreter
                         .eval("(defun getProperty \"java:java.lang.System.getProperty\")\n(getProperty \"java.home\")"),
                 System.getProperty("java.home"));
+        Assert.assertEquals(
+                Interpreter
+                        .eval("(invoke \"java:java.lang.System.getProperty\" \"java.home\")"),
+                System.getProperty("java.home"));
     }
 }
