@@ -2,7 +2,7 @@ package org.regis.jlisp;
 
 
 public class Symbol {
-    String name;
+    public String name;
 
     public Symbol() {
 
