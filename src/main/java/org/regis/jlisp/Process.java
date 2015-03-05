@@ -30,17 +30,15 @@ public class Process {
             System.out.println(args.get(0));
             return args.get(0);
         });
-        register(
-                "jfun",
-                args -> {
-                    String signature = (String) args.get(0);
-                    try {
-                        Method m = resolveMethod(signature, args.subList(1, args.size()));
-                        return m.invoke(null, args.subList(1, args.size()).toArray());
-                    } catch (Throwable e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+        register("jfun", args -> {
+            String signature = (String) args.get(0);
+            try {
+                Method m = resolveMethod(signature, args.subList(1, args.size()));
+                return m.invoke(null, args.subList(1, args.size()).toArray());
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private static Method resolveMethod(String signature, List<Object> args) throws ClassNotFoundException {
@@ -80,10 +78,7 @@ public class Process {
             if (o instanceof SExpression) {
                 SExpression exp = (SExpression) o;
                 if (((Symbol) exp.list.getFirst()).name.equals("defun")) {
-                    SExpression f = new SExpression();
-                    f.list = new LinkedList<Object>(exp.list.subList(1, exp.list.size()));
-                    f.list.add(new SExpression(new Symbol("#pop")));
-                    context.addLocal(((Symbol) exp.list.get(1)).name, f);
+                    defun(exp);
                 } else {
                     codeStack.addFirst(new Call((Symbol) exp.list.getFirst(), exp.list.size() - 1));
                     for (Object obj : exp.list.subList(1, exp.list.size())) {
@@ -96,6 +91,44 @@ public class Process {
             } else {
                 varStack.addFirst(o);
             }
+        }
+    }
+
+    private void defun(SExpression exp) {
+        if (exp.list.get(2) instanceof String) {
+            defunJava(exp);
+        } else {
+            SExpression f = new SExpression();
+            f.list = new LinkedList<Object>(exp.list.subList(1, exp.list.size()));
+            f.list.add(new SExpression(new Symbol("#pop")));
+            context.addLocal(((Symbol) exp.list.get(1)).name, f);
+        }
+    }
+
+    private void defunJava(SExpression exp) {
+        try {
+            String signature = (String) exp.list.get(2);
+            String name = signature.substring(signature.lastIndexOf(".") + 1, signature.length());
+            String clsName = signature.substring(signature.indexOf(":") + 1, signature.lastIndexOf("."));
+            Class cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
+            JInvoker invoker = new JInvoker(cls, name);
+            context.addLocal(((Symbol) exp.list.get(1)).name, new Function<List<Object>, Object>() {
+                @Override
+                public Object apply(List<Object> args) {
+                    try {
+                        return invoker.invoke(args.toArray());
+                    } catch (Throwable e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+            });
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 

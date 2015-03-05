@@ -23,7 +23,7 @@ public class InterpreterTest {
     public void test_defun_java() throws Exception {
         Assert.assertEquals(
                 Interpreter
-                        .eval("(defun getProperty (key) (jfun \"java:java.lang.System.getProperty\" key))\n(getProperty \"java.home\")"),
+                        .eval("(defun getProperty \"java:java.lang.System.getProperty\")\n(getProperty \"java.home\")"),
                 System.getProperty("java.home"));
     }
 }
