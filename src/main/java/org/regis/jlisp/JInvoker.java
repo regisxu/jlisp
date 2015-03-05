@@ -30,15 +30,12 @@ public class JInvoker {
             return MethodHandles.lookup().findStatic(method.getDeclaringClass(), method.getName(),
                     MethodType.methodType(method.getReturnType(), method.getParameterTypes()));
         } else {
-            return MethodHandles.lookup().findVirtual(method.getClass(), method.getName(),
+            return MethodHandles.lookup().findVirtual(method.getDeclaringClass(), method.getName(),
                     MethodType.methodType(method.getReturnType(), method.getParameterTypes()));
         }
     }
 
     public Object invoke(Object... args) throws Throwable {
-        if (mhs.size() == 1) {
-            return mhs.get(0).invoke(args);
-        }
         Class[] argTypes = new Class[args.length];
         for (int i = 0; i < args.length; ++i) {
             argTypes[i] = args[i].getClass();
@@ -52,6 +49,7 @@ public class JInvoker {
                 continue;
             }
         }
+
         throw new WrongMethodTypeException("Wrong arguments");
     }
 }
