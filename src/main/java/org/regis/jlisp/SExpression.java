@@ -4,6 +4,8 @@ import java.util.LinkedList;
 
 
 public class SExpression {
+    public LinkedList<Object> list;
+
     public SExpression(Object... objs) {
         list = new LinkedList<>();
         for (Object obj : objs) {
@@ -11,7 +13,6 @@ public class SExpression {
         }
     }
 
-    public LinkedList<Object> list;
     
     public String toString() {
         return list == null ? null : list.toString();
