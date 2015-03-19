@@ -69,6 +69,8 @@ public class Process {
                 SExpression exp = (SExpression) o;
                 if (((Symbol) exp.list.getFirst()).name.equals("defun")) {
                     defun(exp);
+                } else if (((Symbol) exp.list.getFirst()).name.equals("spawn")) {
+                    spawn(exp);
                 } else {
                     codeStack.addFirst(new Call((Symbol) exp.list.getFirst(), exp.list.size() - 1));
                     for (Object obj : exp.list.subList(1, exp.list.size())) {
@@ -82,6 +84,16 @@ public class Process {
                 varStack.addFirst(o);
             }
         }
+    }
+
+    private void spawn(SExpression exp) {
+        List<SExpression> code = exp.list.subList(1, exp.list.size()).stream().map(entry -> (SExpression) entry)
+                .collect(Collectors.toList());
+        new Thread(new Runnable() {
+            public void run() {
+                new Process(code).run();
+            }
+        }).start();
     }
 
     private void defun(SExpression exp) {

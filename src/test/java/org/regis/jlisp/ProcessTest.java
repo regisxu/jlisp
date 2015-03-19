@@ -32,4 +32,17 @@ public class ProcessTest {
         p.run();
         Assert.assertEquals(new String(out.toByteArray()), "test" + System.lineSeparator());
     }
+
+    @Test
+    public void testSpawn() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(out));
+        Parser parser = new Parser(new ByteArrayInputStream(("(spawn (println \"test\"))\n").getBytes()));
+        List<SExpression> sexps = null;
+        sexps = parser.parse();
+        Process p = new Process(sexps);
+        p.run();
+        Thread.sleep(1000);
+        Assert.assertEquals(new String(out.toByteArray()), "test" + System.lineSeparator());
+    }
 }
