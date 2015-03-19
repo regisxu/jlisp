@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -14,6 +17,14 @@ public class Process {
     private LinkedList<Object> varStack = new LinkedList<>();
 
     private Context context = new Context();
+
+    private long id;
+
+    private static AtomicLong ider = new AtomicLong(0);
+
+    private static ExecutorService executor = Executors.newFixedThreadPool(10);
+
+    private static Map<Long, Process> processes = new HashMap<>();
 
     private static Map<String, Object> global = new HashMap<String, Object>();
     static {
@@ -42,6 +53,15 @@ public class Process {
                 throw new RuntimeException(e);
             }
         });
+        register("resume", args -> {
+            Long id = (Long) args.get(0);
+            if (processes.containsKey(id)) {
+                processes.get(args.get(0)).execute();
+                return id;
+            } else {
+                return null;
+            }
+        });
     }
 
     public Process(List<SExpression> sexps) {
@@ -51,6 +71,8 @@ public class Process {
             return varStack.pollFirst();
         });
         codeStack.addAll(sexps);
+        id = ider.getAndIncrement();
+        processes.put(id, this);
     }
 
     public static void register(String name, Function<List<Object>, Object> f) {
@@ -62,6 +84,14 @@ public class Process {
         return value;
     }
 
+    public void execute() {
+        executor.execute(new Runnable() {
+            public void run() {
+                eval();
+            }
+        });
+    }
+
     private void eval() {
         Object o = null;
         while ((o = codeStack.pollFirst()) != null) {
@@ -71,6 +101,8 @@ public class Process {
                     defun(exp);
                 } else if (((Symbol) exp.list.getFirst()).name.equals("spawn")) {
                     spawn(exp);
+                } else if (((Symbol) exp.list.getFirst()).name.equals("suspend")) {
+                    break;
                 } else {
                     codeStack.addFirst(new Call((Symbol) exp.list.getFirst(), exp.list.size() - 1));
                     for (Object obj : exp.list.subList(1, exp.list.size())) {
@@ -89,11 +121,10 @@ public class Process {
     private void spawn(SExpression exp) {
         List<SExpression> code = exp.list.subList(1, exp.list.size()).stream().map(entry -> (SExpression) entry)
                 .collect(Collectors.toList());
-        new Thread(new Runnable() {
-            public void run() {
-                new Process(code).run();
-            }
-        }).start();
+        Process p = new Process(code);
+        p.execute();
+        value = p.id;
+        varStack.addFirst(p.id);
     }
 
     private void defun(SExpression exp) {
