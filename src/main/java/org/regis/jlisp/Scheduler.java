@@ -1,7 +1,7 @@
 package org.regis.jlisp;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -9,7 +9,7 @@ public class Scheduler {
 
     private static ExecutorService executor = Executors.newFixedThreadPool(10);
 
-    private static Map<Long, Process> processes = new HashMap<>();
+    private static Map<Long, Process> processes = new ConcurrentHashMap<>();
 
     private Scheduler() {
         // prevent initialize instance
