@@ -1,6 +1,5 @@
 package org.regis.jlisp;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,44 +26,6 @@ public class Process {
 
     private static Map<Long, Process> processes = new HashMap<>();
 
-    private static Map<String, Object> global = new HashMap<String, Object>();
-    static {
-        init();
-    }
-
-    private static void init() {
-        register("+", args -> (Integer) args.get(0) + (Integer) args.get(1));
-        register("-", args -> (Integer) args.get(0) - (Integer) args.get(1));
-        register("*", args -> (Integer) args.get(0) * (Integer) args.get(1));
-        register("/", args -> (Integer) args.get(0) / (Integer) args.get(1));
-        register("println", args -> {
-            System.out.println(args.get(0));
-            return args.get(0);
-        });
-        register("invoke", args -> {
-            String signature = (String) args.get(0);
-            String name = signature.substring(signature.lastIndexOf(".") + 1, signature.length());
-            String clsName = signature.substring(signature.indexOf(":") + 1, signature.lastIndexOf("."));
-
-            try {
-                Class cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
-                JInvoker invoker = new JInvoker(cls, name);
-                return invoker.invoke(args.subList(1, args.size()).toArray());
-            } catch (Throwable e) {
-                throw new RuntimeException(e);
-            }
-        });
-        register("resume", args -> {
-            Long id = (Long) args.get(0);
-            if (processes.containsKey(id)) {
-                processes.get(args.get(0)).execute();
-                return id;
-            } else {
-                return null;
-            }
-        });
-    }
-
     public Process(List<SExpression> sexps, Map<String, Object> envs) {
         context = new Context(envs);
         Function<List<Object>, Object> f = args -> {
@@ -78,11 +39,7 @@ public class Process {
     }
 
     public Process(List<SExpression> sexps) {
-        this(sexps, global);
-    }
-
-    public static void register(String name, Function<List<Object>, Object> f) {
-        global.put(name, f);
+        this(sexps, Builtin.builtin);
     }
 
     public Object run() {
@@ -96,6 +53,10 @@ public class Process {
                 eval();
             }
         });
+    }
+
+    public static Process findProcess(long id) {
+        return processes.get(id);
     }
 
     private void eval() {
