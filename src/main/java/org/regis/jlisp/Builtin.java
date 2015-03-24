@@ -37,13 +37,7 @@ public class Builtin {
         });
         register("resume", args -> {
             Long id = (Long) args.get(0);
-            Process p = Process.findProcess(id);
-            if (p != null) {
-                p.execute();
-                return id;
-            } else {
-                return null;
-            }
+            return Scheduler.resume(id);
         });
     }
 

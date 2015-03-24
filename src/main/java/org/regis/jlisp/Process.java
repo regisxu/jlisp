@@ -1,11 +1,8 @@
 package org.regis.jlisp;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -22,10 +19,6 @@ public class Process {
 
     private static AtomicLong ider = new AtomicLong(0);
 
-    private static ExecutorService executor = Executors.newFixedThreadPool(10);
-
-    private static Map<Long, Process> processes = new HashMap<>();
-
     public Process(List<SExpression> sexps, Map<String, Object> envs) {
         context = new Context(envs);
         Function<List<Object>, Object> f = args -> {
@@ -35,7 +28,7 @@ public class Process {
         context.addEnv("#pop", f);
         codeStack.addAll(sexps);
         id = ider.getAndIncrement();
-        processes.put(id, this);
+        Scheduler.register(this);
     }
 
     public Process(List<SExpression> sexps) {
@@ -47,19 +40,11 @@ public class Process {
         return value;
     }
 
-    public void execute() {
-        executor.execute(new Runnable() {
-            public void run() {
-                eval();
-            }
-        });
+    public long getId() {
+        return id;
     }
 
-    public static Process findProcess(long id) {
-        return processes.get(id);
-    }
-
-    private void eval() {
+    void eval() {
         Object o = null;
         while ((o = codeStack.pollFirst()) != null) {
             if (o instanceof SExpression) {
@@ -89,9 +74,9 @@ public class Process {
         List<SExpression> code = exp.list.subList(1, exp.list.size()).stream().map(entry -> (SExpression) entry)
                 .collect(Collectors.toList());
         Process p = new Process(code, context.getEnvs());
-        p.execute();
         value = p.id;
         varStack.addFirst(p.id);
+        Scheduler.execute(p);
     }
 
     private void defun(SExpression exp) {
