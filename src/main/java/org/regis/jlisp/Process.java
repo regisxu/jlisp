@@ -21,11 +21,7 @@ public class Process {
 
     public Process(List<SExpression> sexps, Map<String, Object> envs) {
         context = new Context(envs);
-        Function<List<Object>, Object> f = args -> {
-            context.popFrame();
-            return varStack.pollFirst();
-        };
-        context.addEnv("#pop", f);
+        context.addEnv("#pop", (Function<List<Object>, Object>) (args -> pop()));
         codeStack.addAll(sexps);
         id = ider.getAndIncrement();
         Scheduler.register(this);
@@ -70,6 +66,11 @@ public class Process {
         }
     }
 
+    private Object pop() {
+        context.popFrame();
+        return varStack.pollFirst();
+    }
+
     private void spawn(SExpression exp) {
         List<SExpression> code = exp.list.subList(1, exp.list.size()).stream().map(entry -> (SExpression) entry)
                 .collect(Collectors.toList());
@@ -95,7 +96,7 @@ public class Process {
             String signature = (String) exp.list.get(2);
             String name = signature.substring(signature.lastIndexOf(".") + 1, signature.length());
             String clsName = signature.substring(signature.indexOf(":") + 1, signature.lastIndexOf("."));
-            Class cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
+            Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
             JInvoker invoker = new JInvoker(cls, name);
             context.addLocal(((Symbol) exp.list.get(1)).name, new Function<List<Object>, Object>() {
                 @Override
@@ -118,13 +119,14 @@ public class Process {
     }
 
     private void invoke(Call call) {
-        Object fun = resolveName(call.name.name);
+        Object fun = context.value(call.name.name);
         List<Object> paras = new LinkedList<>();
         for (int i = 0; i < call.count; i++) {
             paras.add(value(varStack.removeFirst()));
         }
         if (fun instanceof Function) {
-            Function f = (Function) fun;
+            @SuppressWarnings("unchecked")
+            Function<List<Object>, Object> f = (Function<List<Object>, Object>) fun;
             value = f.apply(paras);
             varStack.addFirst(value);
         } else {
@@ -139,12 +141,8 @@ public class Process {
     private Object value(Object obj) {
         if (obj instanceof Symbol) {
             Symbol s = (Symbol) obj;
-            return resolveName(s.name);
+            return context.value(s.name);
         }
         return obj;
-    }
-
-    private Object resolveName(String name) {
-        return context.value(name);
     }
 }
