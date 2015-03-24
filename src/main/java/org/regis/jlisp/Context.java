@@ -8,17 +8,22 @@ import java.util.Map;
 
 public class Context {
 
-    Map<String, Object> global = new HashMap<>();
+    private Map<String, Object> envs = new HashMap<>();
 
     private LinkedList<HashMap<String, Object>> frames = new LinkedList<>();
+
+    public Context(Map<String, Object> envs) {
+        // TODO: switch to CopyOnWrite Map
+        this.envs = new HashMap<>(envs);
+    }
 
     public Object value(String name) {
         HashMap<String, Object> local = frames.peekFirst();
         if (local != null && local.containsKey(name)) {
             return frames.getFirst().get(name);
         }
-        if (global.containsKey(name)) {
-            return global.get(name);
+        if (envs.containsKey(name)) {
+            return envs.get(name);
         }
         throw new RuntimeException("Can't resolve symbol '" + name + "'");
     }
@@ -41,15 +46,19 @@ public class Context {
         frames.pollFirst();
     }
 
-    public void addGlobal(String name, Object value) {
-        global.put(name, value);
+    public void addEnv(String name, Object value) {
+        envs.put(name, value);
     }
     
     public void addLocal(String name, Object value) {
         if (frames.peekFirst() == null) {
-            global.put(name, value);
+            envs.put(name, value);
         } else {
             frames.getFirst().put(name, value);
         }
+    }
+
+    public Map<String, Object> getEnvs() {
+        return envs;
     }
 }

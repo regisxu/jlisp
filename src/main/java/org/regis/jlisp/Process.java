@@ -1,5 +1,6 @@
 package org.regis.jlisp;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -16,7 +17,7 @@ public class Process {
     private LinkedList<Object> codeStack = new LinkedList<>();
     private LinkedList<Object> varStack = new LinkedList<>();
 
-    private Context context = new Context();
+    private Context context;
 
     private long id;
 
@@ -64,15 +65,20 @@ public class Process {
         });
     }
 
-    public Process(List<SExpression> sexps) {
-        context.global = global;
-        register("#pop", args -> {
+    public Process(List<SExpression> sexps, Map<String, Object> envs) {
+        context = new Context(envs);
+        Function<List<Object>, Object> f = args -> {
             context.popFrame();
             return varStack.pollFirst();
-        });
+        };
+        context.addEnv("#pop", f);
         codeStack.addAll(sexps);
         id = ider.getAndIncrement();
         processes.put(id, this);
+    }
+
+    public Process(List<SExpression> sexps) {
+        this(sexps, global);
     }
 
     public static void register(String name, Function<List<Object>, Object> f) {
@@ -121,7 +127,7 @@ public class Process {
     private void spawn(SExpression exp) {
         List<SExpression> code = exp.list.subList(1, exp.list.size()).stream().map(entry -> (SExpression) entry)
                 .collect(Collectors.toList());
-        Process p = new Process(code);
+        Process p = new Process(code, context.getEnvs());
         p.execute();
         value = p.id;
         varStack.addFirst(p.id);
