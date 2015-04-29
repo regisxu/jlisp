@@ -27,9 +27,9 @@ public class Process {
         context = new Context(envs);
         context.addEnv("#pop", (Function<List<Object>, Object>) (args -> pop()));
         context.addEnv("send", (Function<List<Object>, Object>) (args -> {
-            return sendMsg(args.get(0), (Long) args.get(1));
+            return send(args.get(0), (Long) args.get(1));
         }));
-        context.addEnv("receive", (Function<List<Object>, Object>) (args -> receiveMsg()));
+        context.addEnv("receive", (Function<List<Object>, Object>) (args -> receive()));
         codeStack.addAll(sexps);
         id = ider.getAndIncrement();
         Scheduler.register(this);
@@ -49,7 +49,7 @@ public class Process {
         return id;
     }
 
-    public boolean sendMsg(Object msg, long id) {
+    public boolean send(Object msg, long id) {
         Process p = Scheduler.findProcess(id);
         if (p != null) {
             p.putMsg(msg);
@@ -58,7 +58,7 @@ public class Process {
         return false;
     }
 
-    public Object receiveMsg() {
+    public Object receive() {
         synchronized (mb) {
             if (mb.size() > 0) {
                 return mb.removeFirst();
