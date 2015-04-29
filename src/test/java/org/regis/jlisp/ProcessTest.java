@@ -78,4 +78,18 @@ public class ProcessTest {
         Thread.sleep(1000);
         Assert.assertEquals(new String(out.toByteArray()), "test" + System.lineSeparator());
     }
+
+    @Test
+    public void testSend() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(out));
+        Parser parser = new Parser(new ByteArrayInputStream(
+                ("(send \"hello world\" (spawn (println (receive))))\n").getBytes()));
+        List<SExpression> sexps = null;
+        sexps = parser.parse();
+        Process p = new Process(sexps);
+        p.run();
+        Thread.sleep(1000);
+        Assert.assertEquals(new String(out.toByteArray()), "hello world" + System.lineSeparator());
+    }
 }

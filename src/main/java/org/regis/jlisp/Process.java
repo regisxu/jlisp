@@ -15,6 +15,10 @@ public class Process {
 
     private Context context;
 
+    private LinkedList<Object> mb = new LinkedList<>();
+
+    private boolean isRunning = true;
+
     private final long id;
 
     private static AtomicLong ider = new AtomicLong(0);
@@ -22,6 +26,10 @@ public class Process {
     public Process(List<SExpression> sexps, Map<String, Object> envs) {
         context = new Context(envs);
         context.addEnv("#pop", (Function<List<Object>, Object>) (args -> pop()));
+        context.addEnv("send", (Function<List<Object>, Object>) (args -> {
+            return sendMsg(args.get(0), (Long) args.get(1));
+        }));
+        context.addEnv("receive", (Function<List<Object>, Object>) (args -> receiveMsg()));
         codeStack.addAll(sexps);
         id = ider.getAndIncrement();
         Scheduler.register(this);
@@ -41,9 +49,40 @@ public class Process {
         return id;
     }
 
+    public boolean sendMsg(Object msg, long id) {
+        Process p = Scheduler.findProcess(id);
+        if (p != null) {
+            p.putMsg(msg);
+            return true;
+        }
+        return false;
+    }
+
+    public Object receiveMsg() {
+        synchronized (mb) {
+            if (mb.size() > 0) {
+                return mb.removeFirst();
+            } else {
+                isRunning = false;
+                codeStack.addFirst(new SExpression(new Symbol("receive")));
+                return null;
+            }
+        }
+    }
+
+    public void putMsg(Object msg) {
+        synchronized (mb) {
+            mb.addLast(msg);
+            if (!isRunning) {
+                isRunning = true;
+                Scheduler.resume(id);
+            }
+        }
+    }
+
     void eval() {
         Object o = null;
-        while ((o = codeStack.pollFirst()) != null) {
+        while (isRunning && (o = codeStack.pollFirst()) != null) {
             if (o instanceof SExpression) {
                 SExpression exp = (SExpression) o;
                 if (((Symbol) exp.list.getFirst()).name.equals("defun")) {
