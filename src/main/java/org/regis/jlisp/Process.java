@@ -15,7 +15,7 @@ public class Process {
 
     private Context context;
 
-    private long id;
+    private final long id;
 
     private static AtomicLong ider = new AtomicLong(0);
 
@@ -33,6 +33,7 @@ public class Process {
 
     public Object run() {
         eval();
+        Scheduler.unregister(id);
         return value;
     }
 

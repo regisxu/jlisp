@@ -36,4 +36,12 @@ public class Scheduler {
             processes.put(p.getId(), p);
         }
     }
+
+    public static void unregister(long id) {
+        processes.remove(id);
+    }
+
+    public static Process findProcess(long id) {
+        return processes.get(id);
+    }
 }
